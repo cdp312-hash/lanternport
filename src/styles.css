@@ -360,3 +360,4 @@ nav { display: flex; gap: 6px; }
 .text-input:focus-visible { outline: 3px solid var(--bell); outline-offset: 1px; }
 .modal form, form.modal { display: grid; gap: 6px; }
 form.modal p { margin: 4px 0; }
+.card.flush > p { margin: 0; padding: 14px 16px; }
