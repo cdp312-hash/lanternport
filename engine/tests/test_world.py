@@ -82,8 +82,13 @@ def test_publishing_never_leaks_the_future(sim, tmp_path):
     assert days[0] == "2020-06-01" and days[-1] == "2020-07-15" and result["editions"] == len(days)
     index = json.loads((tmp_path / "world" / "index.json").read_text())
     assert index["today"] == "2020-07-15"
+    # 15 July is a Wednesday: its market hasn't closed when the morning build runs, so prices stop on the 14th.
+    assert index["completed"] == "2020-07-14"
+    assert index["prices"]["dates"][-1] == "2020-07-14" and index["index_series"]["dates"][-1] == "2020-07-14"
+    assert index["prices"]["dates"][0] == "2020-06-01"  # from the start of last month (here, launch)
+    assert all(len(v) == len(index["prices"]["dates"]) for v in index["prices"]["closes"].values())
     company = json.loads((tmp_path / "world" / "companies" / "fizzco.json").read_text())
-    assert company["dates"][-1] == "2020-07-15"
+    assert company["dates"][-1] == "2020-07-14"
     assert all(item["date"] <= "2020-07-15" for item in company["news"])
     # The morning paper carries the news from after the previous close.
     pub = Publisher(sim, pd.Timestamp(LAUNCH).date(), pd.Timestamp("2020-07-15").date())
@@ -132,3 +137,9 @@ def test_check_command(capsys):
 
     assert main(["check"]) == 0
     assert "60 companies" in capsys.readouterr().out
+
+
+def test_weekend_builds_publish_fridays_close(sim):
+    pub = Publisher(sim, pd.Timestamp(LAUNCH).date(), pd.Timestamp("2020-07-18").date())  # a Saturday
+    assert sim.calendar[pub.R].strftime("%Y-%m-%d") == "2020-07-17"  # Friday's edition
+    assert sim.calendar[pub.C].strftime("%Y-%m-%d") == "2020-07-17"  # and Friday's close is final

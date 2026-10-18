@@ -116,6 +116,7 @@ export function CompanyPage() {
           </div>
         </div>
         <LineChart dates={company.dates} values={closes} markerIndex={company.launch_index} markerLabel="Ledger launches" />
+        <Link className="secondary add-cup" to={`/cup?add=${company.id}`}>+ Add to my Lantern Cup plan</Link>
       </section>
 
       <section className="card">

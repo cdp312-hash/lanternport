@@ -12,6 +12,10 @@ Live at https://cdp312-hash.github.io/lanternport/
   with a 0.1% fee. News moves prices in learnable ways (results keep drifting, takeover rumours fade,
   scandals partly recover, fluff does nothing), so reading the news is the skill. You're scored
   against buy-and-hold, perfect hindsight and 1,000 random traders, then shown what each headline did.
+- **The Lantern Cup**: a monthly trading season on the live world. Start with £10,000, hold up to 5
+  companies plus cash, and set a plan any day. Plans fill at that day's close (weekend plans on Monday)
+  and results appear in the next morning's build. Fill days never come before the latest edition, so a
+  device clock set back can't buy at a price already published. Saved in the player's browser for now.
 
 Everything is made up, so there is no market data to license and nothing to look up.
 
@@ -29,7 +33,7 @@ The site needs world data in `public/`. Build it with the engine first (below).
 
 Useful URLs for testing: `?n=12#/trade` plays puzzle 12 as practice; `?autoplay#/trade` finishes a
 practice round with random choices (`?autoplay=15` stops after 15 days); `?skiphelp` hides the
-first-visit instructions.
+first-visit instructions; in `npm run dev` only, `?demo#/cup` seeds a sample Lantern Cup season.
 
 ## The world engine
 
@@ -46,8 +50,10 @@ cd engine && python -m pytest               # engine tests
 ```
 
 `build` writes `public/world/` (index, one file per edition, one per company) and `public/puzzles/`.
-These are generated, not committed. Only editions up to today are written; later days are simulated
-but kept back. Trading rounds come from years of backstory that is never published.
+These are generated, not committed. Only editions up to today are written, and prices only up to the
+last finished trading day (yesterday, or Friday at a weekend), because the Lantern Cup fills at the
+close. Later days are simulated but kept back. Trading rounds come from years of backstory that is
+never published.
 
 **The seed is secret.** The world is decided by a seed read from `LANTERNPORT_SEED` (a GitHub secret)
 or `engine/.seed` (git-ignored, on the developer's PC). With the public code and the seed, anyone
@@ -88,7 +94,6 @@ placements that invite accidental clicks.
 
 ## Not built yet
 
-- Live trading season: a monthly £10,000 portfolio traded once a day on the live world.
 - Leaderboards (daily and all-time) and nicknames, which need a small backend. Today the
   comparison is with 1,000 simulated random traders, and stats live in the player's browser.
 - The game's name is still a working title (`TITLE` in [src/TradeGame.tsx](src/TradeGame.tsx)).

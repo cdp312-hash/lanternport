@@ -1,4 +1,5 @@
 import { NavLink, Navigate, Outlet, RouterProvider, createHashRouter } from "react-router";
+import { CupPage } from "./CupPage";
 import { LedgerPage } from "./LedgerPage";
 import { CompanyPage, MarketsPage } from "./MarketsPage";
 import { TradeGame } from "./TradeGame";
@@ -20,6 +21,7 @@ function Shell() {
         <nav aria-label="Sections">
           <NavLink to="/" end>Ledger</NavLink>
           <NavLink to="/trade">Trade</NavLink>
+          <NavLink to="/cup">Cup</NavLink>
           <NavLink to="/markets">Markets</NavLink>
         </nav>
       </header>
@@ -38,6 +40,7 @@ const router = createHashRouter([
       { path: "/", element: <LedgerPage /> },
       { path: "/ledger/:date", element: <LedgerPage /> },
       { path: "/trade", element: <TradeGame /> },
+      { path: "/cup", element: <CupPage /> },
       { path: "/markets", element: <MarketsPage /> },
       { path: "/company/:id", element: <CompanyPage /> },
       { path: "*", element: <Navigate to="/" replace /> },

@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { Link, useParams } from "react-router";
 import { signed } from "./engine";
+import { currentCup, seasonReturn } from "./cupStore";
 import { Sparkline } from "./MiniCharts";
 import { SKY_ICON, loadEdition, loadWorld, longDate, shortDate, type Edition, type Story, type WorldIndex } from "./world";
 
@@ -54,6 +55,27 @@ function Gossip({ lines, author }: { lines: string[]; author: string }) {
       {lines.map((g, i) => <p key={i}>{g}</p>)}
       <p className="small muted">Gossip, not news. Don't trade on it.</p>
     </section>
+  );
+}
+
+function CupBox({ world }: { world: WorldIndex }) {
+  const { season } = currentCup(world);
+  const ret = season ? seasonReturn(season) : 0;
+  return (
+    <Link to="/cup" className="box cup-box">
+      <span className="box-title">The Lantern Cup</span>
+      {season ? (
+        <>
+          <strong className="mono">£{Math.round(season.value).toLocaleString("en-GB")} <span className={ret >= 0 ? "up" : "down"}>{signed(ret, 1)}%</span></strong>
+          <span className="small">{season.pending ? "Your plan fills at today's close." : "Adjust your portfolio for today's close →"}</span>
+        </>
+      ) : (
+        <>
+          <strong>This month's trading season</strong>
+          <span className="small">Start with £10,000 and trade on the news. Join any time →</span>
+        </>
+      )}
+    </Link>
   );
 }
 
@@ -165,6 +187,7 @@ export function LedgerPage() {
             <span className="small">Trade a company from the Ledger archive. 30 days, one decision a day.</span>
             <span className="play-cta">Play →</span>
           </Link>
+          <CupBox world={world} />
           {!quiet && <Spotlight s={edition.spotlight} />}
           {!quiet && <Gossip lines={edition.gossip} author={gossipAuthor} />}
         </aside>

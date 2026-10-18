@@ -317,3 +317,37 @@ nav { display: flex; gap: 6px; }
 .spot-chart { display: flex; align-items: center; gap: 10px; }
 .gossip p { font: italic 400 15px/1.45 var(--serif); }
 .gossip p.small { font: 400 12px var(--font); font-style: normal; }
+
+/* --- The Lantern Cup ---------------------------------------------------------------- */
+.cup-intro { display: grid; gap: 12px; }
+.lede-text { margin: 0; font-size: 17px; }
+.cup-rules { margin: 0; padding-left: 20px; display: grid; gap: 6px; }
+.cup-tiles { display: grid; grid-template-columns: repeat(auto-fit, minmax(190px, 1fr)); gap: 10px; }
+.cup-tiles .tile { background: var(--card); border-radius: 12px; padding: 12px 14px; display: grid; gap: 2px; }
+.cup-pending { background: var(--card); border-left: 4px solid var(--bell); border-radius: 8px; padding: 10px 14px; }
+.plan { display: grid; gap: 10px; }
+.plan .card-title { margin-bottom: 0; }
+.plan-rows { display: grid; gap: 8px; }
+.plan-row { display: grid; grid-template-columns: minmax(0, 1fr) minmax(90px, 160px) 48px 38px; gap: 10px; align-items: center; }
+.plan-row select { min-width: 0; padding: 9px 10px; border-radius: 8px; border: 1.5px solid var(--line); background: var(--card); color: var(--ink); font: inherit; font-size: 14px; }
+.plan-row input[type="range"] { width: 100%; accent-color: var(--bell); }
+.plan-row .pct { text-align: right; font-weight: 600; }
+.plan-foot { display: flex; justify-content: space-between; align-items: center; gap: 10px; flex-wrap: wrap; }
+.plan-actions { display: flex; align-items: center; gap: 16px; }
+.plan-actions .primary { padding: 12px 22px; font-size: 16px; }
+.secondary:disabled { opacity: 0.4; cursor: not-allowed; }
+.error-text { margin: 0; color: var(--down); font-weight: 600; }
+.ok-text { margin: 0; color: var(--up); font-weight: 600; }
+.trade-log { list-style: none; margin: 0; padding: 0; display: grid; gap: 10px; }
+.trade-log li { display: grid; gap: 2px; padding-bottom: 8px; border-bottom: 1px solid var(--line); }
+.trade-log li:last-child { border-bottom: 0; }
+.prev-result { margin: 4px 0 0; display: flex; align-items: baseline; gap: 10px; }
+.add-cup { display: inline-block; margin-top: 10px; text-decoration: none; color: var(--ink); }
+.box.cup-box { border-color: var(--bell); }
+.box.cup-box strong { font-size: 17px; }
+.line-chart .compare { fill: none; stroke: var(--muted); stroke-width: 1.5; stroke-dasharray: 5 4; }
+.line-chart .legend text { fill: var(--ink-2); font: 600 11px var(--font); }
+@media (max-width: 520px) {
+  .plan-row { grid-template-columns: minmax(0, 1fr) 48px 38px; }
+  .plan-row input[type="range"] { grid-column: 1 / -1; grid-row: 2; }
+}

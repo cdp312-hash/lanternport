@@ -21,6 +21,9 @@ interface LineProps {
   markerIndex?: number; // e.g. where the live world began
   markerLabel?: string;
   height?: number;
+  compare?: number[]; // a second, dashed line on the same scale
+  compareLabel?: string;
+  valueLabel?: string;
 }
 
 const W = 640;
@@ -32,10 +35,11 @@ function niceStep(range: number): number {
   return [1, 2, 2.5, 5, 10].map((m) => m * pow).find((s) => s >= raw) ?? pow * 10;
 }
 
-export function LineChart({ dates, values, markerIndex, markerLabel, height = 240 }: LineProps) {
+export function LineChart({ dates, values, markerIndex, markerLabel, height = 240, compare, compareLabel, valueLabel }: LineProps) {
   if (values.length < 2) return null;
-  let lo = Math.min(...values);
-  let hi = Math.max(...values);
+  const all = compare ? [...values, ...compare] : values;
+  let lo = Math.min(...all);
+  let hi = Math.max(...all);
   const pad = (hi - lo) * 0.08 || 1;
   lo -= pad;
   hi += pad;
@@ -63,7 +67,18 @@ export function LineChart({ dates, values, markerIndex, markerLabel, height = 24
         </text>
       ))}
       <path d={area} className="area" />
+      {compare && (
+        <path d={compare.map((v, i) => `${i ? "L" : "M"}${x(i).toFixed(1)} ${y(v).toFixed(1)}`).join("")} className="compare" />
+      )}
       <path d={line} className="stroke" />
+      {compare && compareLabel && (
+        <g className="legend">
+          <line x1={PAD.l + 4} x2={PAD.l + 22} y1={PAD.t + 4} y2={PAD.t + 4} className="stroke" />
+          <text x={PAD.l + 28} y={PAD.t + 8}>{valueLabel ?? "Value"}</text>
+          <line x1={PAD.l + 110} x2={PAD.l + 128} y1={PAD.t + 4} y2={PAD.t + 4} className="compare" />
+          <text x={PAD.l + 134} y={PAD.t + 8}>{compareLabel}</text>
+        </g>
+      )}
       {markerIndex !== undefined && markerIndex > 0 && markerIndex < values.length && (
         <g>
           <line x1={x(markerIndex)} x2={x(markerIndex)} y1={PAD.t} y2={height - PAD.b} className="marker" />

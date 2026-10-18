@@ -51,13 +51,15 @@ export interface WorldIndex {
   blurb: string;
   index_name: string;
   launch: string;
-  today: string;
+  today: string; // date of the latest edition
+  completed: string; // latest trading day whose close is published
   editions: string[];
   sectors: string[];
   districts: { name: string; blurb: string }[];
   characters: { name: string; about: string }[];
   companies: CompanySummary[];
   index_series: { dates: string[]; levels: number[] };
+  prices: { dates: string[]; index: number[]; closes: Record<string, number[]> }; // since the start of last month
 }
 
 export interface CompanyPage {

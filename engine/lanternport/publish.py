@@ -3,6 +3,9 @@
 * The live world starts on the launch date. One newspaper edition per trading day is published,
   up to and including the ``through`` date; later days are simulated but not written, so the
   future can't be read from the site. (A scheduled job republishes each morning.)
+* Prices are published only up to the last *finished* trading day: before ``through`` on a weekday
+  (that day's market hasn't closed yet when the morning build runs), or the Friday at a weekend.
+  The live trading season fills orders at a day's close, so publishing it early would leak the answer.
 * Trading puzzles come from the years of backstory before launch, which are never published, so
   their outcomes can't be looked up either.
 
@@ -52,7 +55,8 @@ class Publisher:
         self.w = sim.world
         cal = sim.calendar
         self.L = int(cal.searchsorted(pd.Timestamp(launch)))
-        self.R = int(cal.searchsorted(pd.Timestamp(through), side="right")) - 1
+        self.R = int(cal.searchsorted(pd.Timestamp(through), side="right")) - 1  # today's edition
+        self.C = int(cal.searchsorted(pd.Timestamp(through), side="left")) - 1  # last finished trading day
         if self.L < WINDOW + PUZZLE_GAP_BEFORE_LAUNCH:
             raise ValueError("Launch is too close to the start of the simulation to leave room for backstory")
         if self.R < self.L:
@@ -179,32 +183,43 @@ class Publisher:
             "rival": w.by_id[c["rival"]]["name"] if c.get("rival") else None,
             "rival_id": c.get("rival"),
             "launch_index": PRE_LAUNCH_CHART_DAYS,
-            "dates": [d.strftime("%Y-%m-%d") for d in cal[lo:self.R + 1]],
-            "closes": [_r(x) for x in self.closes[ci, lo:self.R + 1]],
+            "dates": [d.strftime("%Y-%m-%d") for d in cal[lo:self.C + 1]],
+            "closes": [_r(x) for x in self.closes[ci, lo:self.C + 1]],
             "news": list(reversed(news)),
         }
 
     def index(self, editions: list[str]) -> dict:
-        w, t = self.w, self.R
+        w, c = self.w, self.C
         cfg = w.config
+        cal = self.sim.calendar
+        # Prices for the live trading season: every close from the start of last month to the last
+        # finished day, so the current and previous seasons can be scored in the browser.
+        first = cal[c].replace(day=1) - pd.offsets.MonthBegin(1)
+        p0 = max(int(cal.searchsorted(first)), self.L - 1)
         return {
             "city": cfg["city"], "newspaper": cfg["newspaper"], "motto": cfg.get("motto", ""), "blurb": cfg.get("blurb", ""),
             "index_name": cfg["index"]["name"],
-            "launch": self.sim.calendar[self.L].strftime("%Y-%m-%d"),
-            "today": self.sim.calendar[t].strftime("%Y-%m-%d"),
+            "launch": cal[self.L].strftime("%Y-%m-%d"),
+            "today": cal[self.R].strftime("%Y-%m-%d"),
+            "completed": cal[c].strftime("%Y-%m-%d"),
             "editions": editions,
             "sectors": [s["name"] for s in w.sectors.values()],
             "districts": [{"name": d["name"], "blurb": d["blurb"]} for d in w.districts.values()],
-            "characters": [{"name": c["name"], "about": c["about"]} for c in w.characters.values()],
+            "characters": [{"name": ch["name"], "about": ch["about"]} for ch in w.characters.values()],
             "companies": [
-                {"id": c["id"], "name": c["name"], "ticker": c["ticker"], "sector": w.sectors[c["sector"]]["name"],
-                 "price": _r(self.closes[i, t - 1]),
-                 "change": _r((self.closes[i, t - 1] / self.closes[i, t - 2] - 1) * 100),
-                 "spark": [_r(x) for x in self.closes[i, max(self.L - 20, t - 30):t]]}
-                for i, c in enumerate(w.companies)
+                {"id": co["id"], "name": co["name"], "ticker": co["ticker"], "sector": w.sectors[co["sector"]]["name"],
+                 "price": _r(self.closes[i, c]),
+                 "change": _r((self.closes[i, c] / self.closes[i, c - 1] - 1) * 100),
+                 "spark": [_r(x) for x in self.closes[i, max(self.L - 20, c - 29):c + 1]]}
+                for i, co in enumerate(w.companies)
             ],
-            "index_series": {"dates": [d.strftime("%Y-%m-%d") for d in self.sim.calendar[self.L - PRE_LAUNCH_CHART_DAYS:t]],
-                             "levels": [_r(x, 1) for x in self.level[self.L - PRE_LAUNCH_CHART_DAYS:t]]},
+            "index_series": {"dates": [d.strftime("%Y-%m-%d") for d in cal[self.L - PRE_LAUNCH_CHART_DAYS:c + 1]],
+                             "levels": [_r(x, 1) for x in self.level[self.L - PRE_LAUNCH_CHART_DAYS:c + 1]]},
+            "prices": {
+                "dates": [d.strftime("%Y-%m-%d") for d in cal[p0:c + 1]],
+                "index": [_r(x, 1) for x in self.level[p0:c + 1]],
+                "closes": {co["id"]: [_r(x) for x in self.closes[i, p0:c + 1]] for i, co in enumerate(w.companies)},
+            },
         }
 
     # --- Archive puzzles ---------------------------------------------------------------------
