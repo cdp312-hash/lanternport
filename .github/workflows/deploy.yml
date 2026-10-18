@@ -1,0 +1,54 @@
+# Builds the game and publishes it to GitHub Pages on every push to main.
+# One-time setup: repo Settings > Pages > Source: "GitHub Actions".
+# Ads: add repository variables (Settings > Secrets and variables > Actions > Variables):
+#   ADSENSE_CLIENT (ca-pub-...), AD_SLOT_RESULT, AD_SLOT_FOOTER. ads.txt is generated from ADSENSE_CLIENT.
+name: Deploy to GitHub Pages
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+concurrency:
+  group: pages
+  cancel-in-progress: true
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: npm
+      - run: npm ci
+      - run: npm test
+      - run: npm run build
+        env:
+          VITE_ADSENSE_CLIENT: ${{ vars.ADSENSE_CLIENT }}
+          VITE_AD_SLOT_RESULT: ${{ vars.AD_SLOT_RESULT }}
+          VITE_AD_SLOT_FOOTER: ${{ vars.AD_SLOT_FOOTER }}
+      - name: Write ads.txt
+        if: ${{ vars.ADSENSE_CLIENT != '' }}
+        env:
+          ADSENSE_CLIENT: ${{ vars.ADSENSE_CLIENT }}
+        run: echo "google.com, ${ADSENSE_CLIENT#ca-}, DIRECT, f08c47fec0942fa0" > dist/ads.txt
+      - uses: actions/upload-pages-artifact@v3
+        with:
+          path: dist
+
+  deploy:
+    needs: build
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - id: deployment
+        uses: actions/deploy-pages@v4
