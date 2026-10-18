@@ -18,7 +18,7 @@
     {
       "binding": "DB",
       "database_name": "lanternport",
-      "database_id": "00000000-0000-0000-0000-000000000000",
+      "database_id": "9ad63e73-f120-44f1-aa02-c1973b10aa0a",
       "migrations_dir": "migrations"
     }
   ]

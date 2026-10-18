@@ -99,9 +99,10 @@ npx vitest run                                  # API tests, run inside the Work
 
 Run the site against it with `VITE_API_URL=http://localhost:8787 npm run dev`.
 
-**Deploying** (once): `npx wrangler login`, `npx wrangler d1 create lanternport` (put the id in
-`wrangler.jsonc`), `npx wrangler d1 migrations apply lanternport --remote`, `npm run deploy`. Then set
-the repository variable `API_URL` to the worker's address and re-run the site workflow.
+**Live at** https://lanternport-api.lanternport-api.workers.dev (the site's workflow points at it).
+Deploy changes with `npx wrangler login` (once per machine) then `npm run deploy`. New database
+migrations go in `migrations/` and are applied with `npx wrangler d1 migrations apply lanternport --remote`
+before deploying the code that needs them.
 
 ## Ads
 
