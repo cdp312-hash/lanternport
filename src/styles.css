@@ -351,3 +351,12 @@ nav { display: flex; gap: 6px; }
   .plan-row { grid-template-columns: minmax(0, 1fr) 48px 38px; }
   .plan-row input[type="range"] { grid-column: 1 / -1; grid-row: 2; }
 }
+
+/* Leaderboards and nicknames */
+.leaders tr.me td { background: color-mix(in srgb, var(--bell) 14%, transparent); font-weight: 700; }
+.you-tag { margin-left: 8px; font: 700 10px var(--font); letter-spacing: 0.08em; text-transform: uppercase; background: var(--bell); color: var(--bell-ink); padding: 1px 6px; border-radius: 4px; }
+.field-label { display: block; font-weight: 700; font-size: 14px; margin: 8px 0 4px; }
+.text-input { width: 100%; padding: 11px 12px; border-radius: 8px; border: 1.5px solid var(--line); background: var(--card); color: var(--ink); font: inherit; font-size: 16px; }
+.text-input:focus-visible { outline: 3px solid var(--bell); outline-offset: 1px; }
+.modal form, form.modal { display: grid; gap: 6px; }
+form.modal p { margin: 4px 0; }

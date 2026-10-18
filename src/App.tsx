@@ -1,5 +1,6 @@
 import { NavLink, Navigate, Outlet, RouterProvider, createHashRouter } from "react-router";
 import { CupPage } from "./CupPage";
+import { LeaderboardPage } from "./LeaderboardPage";
 import { LedgerPage } from "./LedgerPage";
 import { CompanyPage, MarketsPage } from "./MarketsPage";
 import { TradeGame } from "./TradeGame";
@@ -41,6 +42,7 @@ const router = createHashRouter([
       { path: "/ledger/:date", element: <LedgerPage /> },
       { path: "/trade", element: <TradeGame /> },
       { path: "/cup", element: <CupPage /> },
+      { path: "/leaderboard", element: <LeaderboardPage /> },
       { path: "/markets", element: <MarketsPage /> },
       { path: "/company/:id", element: <CompanyPage /> },
       { path: "*", element: <Navigate to="/" replace /> },

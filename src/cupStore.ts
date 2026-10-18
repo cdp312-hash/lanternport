@@ -44,6 +44,15 @@ export function placePlan(month: string, plan: Plan): Store {
   return store;
 }
 
+/** Online mode: the server's copy of a season replaces the local one. */
+export function mirrorSeason(month: string, season: SeasonRecord | null): Store {
+  const store = loadCup();
+  if (season) store[month] = { joined: season.joined, plans: season.plans };
+  else delete store[month];
+  save(store);
+  return store;
+}
+
 export function cancelPlan(month: string, fill: string): Store {
   const store = loadCup();
   if (store[month]) store[month].plans = store[month].plans.filter((p) => p.fill !== fill);

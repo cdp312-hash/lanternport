@@ -29,8 +29,11 @@ if ($item -and $item.LinkType -eq "Junction") {
 
 Push-Location $here
 try {
+    $ErrorActionPreference = "Continue"  # npm writes warnings to stderr; only the exit code matters
     & npm.cmd install --no-fund --no-audit @args
-    if ($LASTEXITCODE -ne 0) { throw "npm install failed" }
+    $code = $LASTEXITCODE
+    $ErrorActionPreference = "Stop"
+    if ($code -ne 0) { throw "npm install failed" }
 } finally {
     Pop-Location
 }
@@ -39,6 +42,7 @@ New-Item -ItemType Directory -Force (Split-Path $store) | Out-Null
 Move-Item $link $store
 New-Item -ItemType Junction -Path $link -Target $store | Out-Null
 Write-Host "node_modules is a junction to $store"
+
 
 
 

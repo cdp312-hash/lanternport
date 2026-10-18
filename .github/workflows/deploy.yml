@@ -8,6 +8,8 @@
 #   - Settings > Secrets and variables > Actions > New repository secret: LANTERNPORT_SEED
 #     (the number in engine/.seed on the developer's PC; it decides the whole world, so keep it secret)
 # Ads (optional): repository variables ADSENSE_CLIENT (ca-pub-...), AD_SLOT_RESULT, AD_SLOT_FOOTER.
+# Leaderboards: repository variable API_URL (the deployed worker's address). Without it the Lantern Cup
+# saves in the player's browser only.
 #
 # Note: GitHub pauses scheduled workflows in public repos after 60 days without commits. It emails a
 # warning first; any commit (or re-enabling the workflow in the Actions tab) restarts it.
@@ -59,13 +61,22 @@ jobs:
         with:
           node-version: 24
           cache: npm
+          cache-dependency-path: |
+            package-lock.json
+            worker/package-lock.json
       - run: npm ci
       - run: npm test
+      - name: Test the API
+        working-directory: worker
+        run: |
+          npm ci
+          npx vitest run
       - run: npm run build
         env:
           VITE_ADSENSE_CLIENT: ${{ vars.ADSENSE_CLIENT }}
           VITE_AD_SLOT_RESULT: ${{ vars.AD_SLOT_RESULT }}
           VITE_AD_SLOT_FOOTER: ${{ vars.AD_SLOT_FOOTER }}
+          VITE_API_URL: ${{ vars.API_URL }}
       - name: Write ads.txt
         if: ${{ vars.ADSENSE_CLIENT != '' }}
         env:

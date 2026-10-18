@@ -1,0 +1,25 @@
+{
+  // The Lanternport API: nicknames, Lantern Cup plans and leaderboards.
+  // Local: `npm run dev` (http://localhost:8787, with a local database).
+  // Deploy: `npx wrangler d1 create lanternport`, put the id it prints in database_id below,
+  // `npx wrangler d1 migrations apply lanternport --remote`, then `npm run deploy`.
+  "$schema": "node_modules/wrangler/config-schema.json",
+  "name": "lanternport-api",
+  "main": "src/index.ts",
+  "compatibility_date": "2026-10-01",
+  "observability": { "enabled": true },
+  "vars": {
+    // Where the published world lives; the API reads prices and the latest edition from here.
+    "SITE_URL": "https://cdp312-hash.github.io/lanternport",
+    // Browser origins allowed to call the API.
+    "ALLOWED_ORIGINS": "https://cdp312-hash.github.io,http://localhost:5174,http://localhost:4174,http://127.0.0.1:5174,http://127.0.0.1:4174"
+  },
+  "d1_databases": [
+    {
+      "binding": "DB",
+      "database_name": "lanternport",
+      "database_id": "00000000-0000-0000-0000-000000000000",
+      "migrations_dir": "migrations"
+    }
+  ]
+}

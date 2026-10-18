@@ -78,6 +78,31 @@ under **Settings → Secrets and variables → Actions**.
 GitHub pauses scheduled workflows in public repositories after 60 days without commits. It emails a
 warning first; any commit, or re-enabling the workflow in the Actions tab, restarts it.
 
+## The API (leaderboards)
+
+[worker/](worker/) is a small Cloudflare Worker with a D1 (SQLite) database: nicknames without
+sign-up, Lantern Cup plans and the monthly leaderboard.
+
+- **Fair by design.** The server decides each plan's fill day (today's close in UK time, Monday's at a
+  weekend, never before the latest edition), so nobody can trade on a published price. It scores
+  seasons with the same code as the site ([src/cup.ts](src/cup.ts)), using the prices the site publishes.
+- **Players** are a nickname plus a random key kept in the browser (only its hash is stored). Players can
+  delete everything about themselves from the Cup page.
+
+```
+cd worker
+./install.ps1                                   # first time only
+npx wrangler d1 migrations apply lanternport --local
+npm run dev                                     # http://localhost:8787 with a local database
+npx vitest run                                  # API tests, run inside the Workers runtime
+```
+
+Run the site against it with `VITE_API_URL=http://localhost:8787 npm run dev`.
+
+**Deploying** (once): `npx wrangler login`, `npx wrangler d1 create lanternport` (put the id in
+`wrangler.jsonc`), `npx wrangler d1 migrations apply lanternport --remote`, `npm run deploy`. Then set
+the repository variable `API_URL` to the worker's address and re-run the site workflow.
+
 ## Ads
 
 Ads come from Google AdSense and are off until configured. AdSense only approves live sites.
@@ -94,6 +119,6 @@ placements that invite accidental clicks.
 
 ## Not built yet
 
-- Leaderboards (daily and all-time) and nicknames, which need a small backend. Today the
-  comparison is with 1,000 simulated random traders, and stats live in the player's browser.
+- A Daily Trade leaderboard. That needs the server to reveal each day's price only after a decision
+  is locked in, so today's puzzle would no longer be published as a static file.
 - The game's name is still a working title (`TITLE` in [src/TradeGame.tsx](src/TradeGame.tsx)).

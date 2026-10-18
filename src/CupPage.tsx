@@ -1,7 +1,10 @@
 import { useEffect, useMemo, useState } from "react";
 import { Link, useSearchParams } from "react-router";
 import { CUP_FEE, CUP_START, MAX_HOLDINGS, fillDayFor, lastTradingDayOfMonth, runSeason, validateTargets, type Plan } from "./cup";
-import { cancelPlan, currentCup, joinSeason, loadCup, localToday, placePlan, seasonReturn } from "./cupStore";
+import * as api from "./api";
+import { cancelPlan, currentCup, joinSeason, loadCup, localToday, mirrorSeason, placePlan, seasonReturn } from "./cupStore";
+import { LeaderTable } from "./LeaderboardPage";
+import { NicknameDialog } from "./NicknameDialog";
 import { signed } from "./engine";
 import { LineChart } from "./MiniCharts";
 import { loadWorld, type WorldIndex } from "./world";
@@ -41,6 +44,26 @@ export function CupPage() {
   const [rows, setRows] = useState<Row[] | null>(null);
   const [message, setMessage] = useState<{ tone: "ok" | "error"; text: string } | null>(null);
   const [params, setParams] = useSearchParams();
+  const online = api.apiEnabled();
+  const [player, setPlayerState] = useState(api.getPlayer());
+  const [askName, setAskName] = useState<null | (() => void)>(null);
+  const [board, setBoard] = useState<api.Leaderboard | null>(null);
+  const [busy, setBusy] = useState(false);
+
+  // Online: the server's season is the truth; mirror it locally so the rest of the site can show it.
+  const sync = (state: api.CupServerState) => setStore(mirrorSeason(state.month, state.season));
+  const refreshBoard = () => { if (online) api.leaderboard().then(setBoard).catch(() => setBoard(null)); };
+  useEffect(() => {
+    if (!online) return;
+    refreshBoard();
+    if (player) api.cupState().then(sync).catch((e) => { if (e.status === 401) setPlayerState(null); });
+  }, [online, player]);
+
+  /** Run an action that needs a nickname, asking for one first if necessary. */
+  const withPlayer = (action: () => void) => {
+    if (!online || api.getPlayer()) return action();
+    setAskName(() => action);
+  };
 
   useEffect(() => {
     loadWorld().then((w) => {
@@ -91,16 +114,32 @@ export function CupPage() {
   const { fillDay, month, season } = cup;
   const lastDay = lastTradingDayOfMonth(month);
   const daysLeft = tradingDaysBetween(fillDay, lastDay);
-  const resultsDay = nextTradingDay(fillDay);
 
   // Previous season's final result, if the player took part.
   const prevMonth = Object.keys(store).filter((m) => m < month).sort().pop();
   const prevSeason = prevMonth ? runSeason(world.prices, store[prevMonth].plans, prevMonth, store[prevMonth].joined) : null;
 
-  const join = () => {
-    setStore(joinSeason(month, fillDay));
-    setRows([]);
-  };
+  const join = () => withPlayer(async () => {
+    if (!online) {
+      setStore(joinSeason(month, fillDay));
+      setRows([]);
+      return;
+    }
+    try {
+      setBusy(true);
+      sync(await api.joinCup());
+      setRows([]);
+      refreshBoard();
+    } catch (e) {
+      setMessage({ tone: "error", text: (e as Error).message });
+    } finally {
+      setBusy(false);
+    }
+  });
+
+  const nicknameDialog = askName && (
+    <NicknameDialog onClose={() => setAskName(null)} onDone={(p) => { setPlayerState(p); const next = askName; setAskName(null); next(); }} />
+  );
 
   if (!season) {
     return (
@@ -118,10 +157,22 @@ export function CupPage() {
             <li>A {CUP_FEE * 100}% fee applies to everything you buy or sell.</li>
             <li>A new season starts every month. Your aim: beat the {world.index_name}.</li>
           </ul>
-          <button type="button" className="primary wide" onClick={join}>Join the {monthName(month).split(" ")[0]} season</button>
-          <p className="small muted">{daysLeft} trading day{daysLeft === 1 ? "" : "s"} left this season. Your portfolio is saved in this browser.</p>
+          <button type="button" className="primary wide" disabled={busy} onClick={join}>Join the {monthName(month).split(" ")[0]} season</button>
+          <p className="small muted">
+            {daysLeft} trading day{daysLeft === 1 ? "" : "s"} left this season.{" "}
+            {online ? "You'll pick a nickname for the leaderboard." : "Your portfolio is saved in this browser."}
+          </p>
+          {message && <p className="error-text" role="alert">{message.text}</p>}
         </section>
+        {online && board && (
+          <section className="card">
+            <h2 className="card-title">Leaderboard: {monthName(board.month)}</h2>
+            <LeaderTable board={board} limit={10} />
+            <Link className="small" to="/leaderboard">Full leaderboard →</Link>
+          </section>
+        )}
         {prevSeason && <PrevSeason month={prevMonth!} ret={seasonReturn(prevSeason)} />}
+        {nicknameDialog}
       </div>
     );
   }
@@ -134,21 +185,50 @@ export function CupPage() {
   const invested = Object.values(targets).reduce((s, v) => s + v, 0);
   const usedIds = new Set(editing.map((r) => r.id));
 
-  const submit = () => {
+  const submit = () => withPlayer(async () => {
     if (problem) return setMessage({ tone: "error", text: problem });
-    const plan: Plan = { placed: new Date().toISOString(), fill: fillDay, targets };
     try {
-      setStore(placePlan(month, plan));
-      setMessage({ tone: "ok", text: `Plan placed. It fills at ${dayName(fillDay)}'s close; see how it went in ${dayName(resultsDay)}'s Ledger.` });
+      setBusy(true);
+      let fill = fillDay;
+      if (online) {
+        const state = await api.setPlan(targets);
+        sync(state);
+        fill = state.fill; // the server decides
+      } else {
+        const plan: Plan = { placed: new Date().toISOString(), fill: fillDay, targets };
+        setStore(placePlan(month, plan));
+      }
+      setMessage({ tone: "ok", text: `Plan placed. It fills at ${dayName(fill)}'s close; see how it went in ${dayName(nextTradingDay(fill))}'s Ledger.` });
     } catch (e) {
       setMessage({ tone: "error", text: (e as Error).message });
+    } finally {
+      setBusy(false);
+    }
+  });
+
+  const cancel = async () => {
+    try {
+      setBusy(true);
+      if (online) sync(await api.cancelPlan());
+      else setStore(cancelPlan(month, fillDay));
+      setRows(null);
+      setMessage({ tone: "ok", text: "Plan cancelled. Your portfolio stays as it is." });
+    } catch (e) {
+      setMessage({ tone: "error", text: (e as Error).message });
+    } finally {
+      setBusy(false);
     }
   };
 
-  const cancel = () => {
-    setStore(cancelPlan(month, fillDay));
-    setRows(null);
-    setMessage({ tone: "ok", text: "Plan cancelled. Your portfolio stays as it is." });
+  const forget = async () => {
+    try {
+      await api.forgetMe();
+      setPlayerState(null);
+      setStore(mirrorSeason(month, null));
+      setMessage({ tone: "ok", text: "Done. Your nickname and Cup data have been deleted from the server." });
+    } catch (e) {
+      setMessage({ tone: "error", text: (e as Error).message });
+    }
   };
 
   const setRow = (i: number, patch: Partial<Row>) => setRows(editing.map((r, j) => (j === i ? { ...r, ...patch } : r)));
@@ -253,7 +333,7 @@ export function CupPage() {
           {problem && <p className="error-text">{problem}</p>}
           {message && <p className={message.tone === "error" ? "error-text" : "ok-text"} role="status">{message.text}</p>}
           <div className="plan-actions">
-            <button type="button" className="primary" disabled={!!problem} onClick={submit}>
+            <button type="button" className="primary" disabled={!!problem || busy} onClick={submit}>
               {season.pending ? "Update plan" : "Place plan"}
             </button>
             {season.pending && <button type="button" className="link" onClick={cancel}>Cancel plan</button>}
@@ -278,8 +358,24 @@ export function CupPage() {
         </section>
       )}
 
+      {online && board && (
+        <section className="card">
+          <h2 className="card-title">Leaderboard</h2>
+          <LeaderTable board={board} limit={10} />
+          <Link className="small" to="/leaderboard">Full leaderboard →</Link>
+        </section>
+      )}
+
       {prevSeason && <PrevSeason month={prevMonth!} ret={seasonReturn(prevSeason)} />}
-      <p className="disclaimer center">Saved in this browser only (on {localToday()}). Leaderboards are coming.</p>
+      {online ? (
+        <p className="disclaimer center">
+          Playing as <strong>{player?.nickname}</strong>.{" "}
+          <button type="button" className="link small" onClick={forget}>Delete my nickname and Cup data</button>
+        </p>
+      ) : (
+        <p className="disclaimer center">Saved in this browser only (on {localToday()}).</p>
+      )}
+      {nicknameDialog}
     </div>
   );
 }
