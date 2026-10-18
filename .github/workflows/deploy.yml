@@ -1,12 +1,23 @@
-# Builds the game and publishes it to GitHub Pages on every push to main.
-# One-time setup: repo Settings > Pages > Source: "GitHub Actions".
-# Ads: add repository variables (Settings > Secrets and variables > Actions > Variables):
-#   ADSENSE_CLIENT (ca-pub-...), AD_SLOT_RESULT, AD_SLOT_FOOTER. ads.txt is generated from ADSENSE_CLIENT.
-name: Deploy to GitHub Pages
+# Builds the world and the site, and publishes to GitHub Pages:
+#   - on every push to main,
+#   - every morning at 05:00 UTC (6am UK in summer, 5am in winter), which puts out the new Ledger,
+#   - or by hand from the Actions tab.
+#
+# One-time setup:
+#   - Settings > Pages > Source: "GitHub Actions"
+#   - Settings > Secrets and variables > Actions > New repository secret: LANTERNPORT_SEED
+#     (the number in engine/.seed on the developer's PC; it decides the whole world, so keep it secret)
+# Ads (optional): repository variables ADSENSE_CLIENT (ca-pub-...), AD_SLOT_RESULT, AD_SLOT_FOOTER.
+#
+# Note: GitHub pauses scheduled workflows in public repos after 60 days without commits. It emails a
+# warning first; any commit (or re-enabling the workflow in the Actions tab) restarts it.
+name: Build and publish
 
 on:
   push:
     branches: [main]
+  schedule:
+    - cron: "0 5 * * *"
   workflow_dispatch:
 
 permissions:
@@ -16,14 +27,35 @@ permissions:
 
 concurrency:
   group: pages
-  cancel-in-progress: true
+  cancel-in-progress: false
 
 jobs:
   build:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-node@v4
+      - uses: actions/checkout@v7
+
+      - uses: actions/setup-python@v7
+        with:
+          python-version: "3.12"
+          cache: pip
+          cache-dependency-path: engine/pyproject.toml
+      - name: Install the world engine
+        run: pip install -e "engine[dev]"
+      - name: Test the world engine
+        working-directory: engine
+        run: python -m pytest -q
+      - name: Build today's world
+        env:
+          LANTERNPORT_SEED: ${{ secrets.LANTERNPORT_SEED }}
+        run: |
+          if [ -z "$LANTERNPORT_SEED" ]; then
+            echo "::error::Add the LANTERNPORT_SEED repository secret (Settings > Secrets and variables > Actions)."
+            exit 1
+          fi
+          python -m lanternport build --through "$(TZ=Europe/London date +%F)"
+
+      - uses: actions/setup-node@v7
         with:
           node-version: 24
           cache: npm
@@ -39,7 +71,8 @@ jobs:
         env:
           ADSENSE_CLIENT: ${{ vars.ADSENSE_CLIENT }}
         run: echo "google.com, ${ADSENSE_CLIENT#ca-}, DIRECT, f08c47fec0942fa0" > dist/ads.txt
-      - uses: actions/upload-pages-artifact@v3
+
+      - uses: actions/upload-pages-artifact@v5
         with:
           path: dist
 
@@ -51,4 +84,4 @@ jobs:
       url: ${{ steps.deployment.outputs.page_url }}
     steps:
       - id: deployment
-        uses: actions/deploy-pages@v4
+        uses: actions/deploy-pages@v5

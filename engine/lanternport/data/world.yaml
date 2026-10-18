@@ -1,0 +1,73 @@
+# The world of Lanternport: setting, districts, sectors and recurring characters.
+# Edit freely. Ids are used by companies.yaml and storylines.yaml; names are what players see.
+
+city: Lanternport
+newspaper: The Lanternport Ledger
+motto: "All the news that fits, and some that doesn't"
+index: { id: L60, name: Lantern 60, blurb: "the 60 biggest companies on the Lanternport Exchange" }
+blurb: >
+  A cheerful harbour city on a windy stretch of coast, famous for its lighthouse, its
+  pier, its custard, and an economy that runs on gossip and fizzy drinks.
+
+districts:
+  - { id: harbour, name: The Harbour, blurb: "fishing boats, the ferry terminal and the famous lighthouse" }
+  - { id: oldtown, name: Old Town, blurb: "cobbled streets, the town hall, the Exchange and the Ledger's offices" }
+  - { id: techquarter, name: The Sprockets, blurb: "old warehouses full of start-ups, beanbags and ambitious coffee" }
+  - { id: docks, name: The Docks, blurb: "factories, warehouses and the smell of baking custard" }
+  - { id: greenhill, name: Greenhill, blurb: "farms, orchards and the annual Giant Marrow Show" }
+  - { id: seaside, name: Seaside, blurb: "the pier, beach huts, hotels and a great many seagulls" }
+  - { id: airport, name: Gullswing, blurb: "Gullswing Airport and its business parks" }
+
+# beta: how much the sector follows the whole market. vol: typical daily move of its companies.
+sectors:
+  - { id: consumer, name: Consumer, beta: 0.9, vol: 0.016 }
+  - { id: food, name: Food & Drink, beta: 0.7, vol: 0.014 }
+  - { id: retail, name: Retail, beta: 1.0, vol: 0.017 }
+  - { id: tech, name: Technology, beta: 1.3, vol: 0.022 }
+  - { id: health, name: Healthcare, beta: 0.7, vol: 0.019 }
+  - { id: energy, name: Energy, beta: 0.9, vol: 0.018 }
+  - { id: industrials, name: Industrials, beta: 1.1, vol: 0.017 }
+  - { id: finance, name: Finance, beta: 1.2, vol: 0.016 }
+  - { id: travel, name: Travel & Leisure, beta: 1.2, vol: 0.02 }
+  - { id: media, name: Media, beta: 1.0, vol: 0.019 }
+
+characters:
+  mayor: { name: Mayor Penelope Puddock, about: "runs the town hall; never seen without her umbrella" }
+  governor: { name: Agatha Fairweather, about: "Governor of the Bank of Lanternport, which sets interest rates" }
+  weather: { name: Stormy Pete Peterkin, about: "the city's much-loved, rarely accurate weather presenter" }
+  gossip: { name: Dotty Whisper, about: "the Ledger's gossip columnist; hears everything first" }
+  editor: { name: Margot Inkwell, about: "editor of the Lanternport Ledger" }
+  union: { name: Big Sal Tremlow, about: "leader of the Lanternport Workers' Union" }
+
+# Dotty Whisper's gossip column. Pure fun: these never move prices.
+gossip:
+  - "Which {sector} boss was spotted buying 40 rubber ducks on Tuesday? My lips are sealed. (It was {boss}.)"
+  - "Word in {district} is that {boss} of {company} has taken up competitive yodelling."
+  - "{boss}, who {trait}, has been banned from the Copper Kettle quiz for 'knowing too much'."
+  - "Staff at {company} report that the office fish has been given a job title."
+  - "Spotted: {boss} test-driving a Zippa Zoom along the promenade. Badly."
+  - "A little seagull tells me {company} has ordered 300 bean bags for the boardroom."
+  - "{boss} insists the new {product} was 'inspired by a dream about custard'."
+  - "Is it true that {boss} of {company} has never once used a lift? Asking for a friend."
+  - "The {company} Christmas party is already booked. It's October. Make of that what you will."
+  - "Who left a 3-metre inflatable lighthouse in a {district} car park? Not {boss}, apparently."
+  - "{boss} was overheard calling the {product} 'my third child'. The other two were not available for comment."
+  - "Rumour has it {boss} practises speeches to a cardboard cut-out of {mayor}."
+
+# Features that fill the paper on quiet days. They never move prices.
+features:
+  - "Giant marrow breaks Greenhill record for third year running"
+  - "Seagull steals ice cream from {mayor} during pier visit"
+  - "Lighthouse keeper celebrates 40 years of not falling asleep"
+  - "Lanternport Lions win the Coastal Cup on penalties"
+  - "Old Town bakery unveils a 3-metre custard slice"
+  - "Lost tortoise found after 6 weeks, 400 metres from home"
+  - "{weather} apologises for 'slightly optimistic' sunshine forecast"
+  - "Pier ghost tours sell out for the first time"
+  - "Town hall clock finally fixed after 11 years"
+  - "Knitting club wraps the lighthouse in a giant scarf"
+  - "Brass band breaks record for longest 'Happy Birthday'"
+  - "{gossip}: which boss was spotted buying 40 rubber ducks?"
+  - "Greenhill goats escape, briefly occupy the Exchange steps"
+  - "Sandcastle contest won by a 9-year-old's model of the town hall"
+  - "City's oldest resident, 104, credits 'custard and stubbornness'"
